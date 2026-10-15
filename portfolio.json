@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "name": "atlas-workbench-alan-vo",
+  "owner": "ALANDVO",
+  "email": "alanvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "workflows": [
+    "OIDC Keycloak + SAML broker authentication with RBAC (operator/analyst/admin)",
+    "Compression session management: create, list, get, update, end with pagination and filtering",
+    "Compression statistics dashboard with token savings tracking",
+    "Health checks and audit logging"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "summary": "Work in progress: atlas-workbench-alan-vo",
+  "status": "work-in-progress"
+}
