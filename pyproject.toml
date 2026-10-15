@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools==73.0.1", "wheel==0.44.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "atlas-workbench-alan-vo"
+version = "1.0.0"
+description = "Token compression proxy for AI coding agents"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Alan Vo", email = "alanvo@gmail.com" },
+]
+license = { text = "MIT" }
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.32.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.5.2",
+    "python-jose[cryptography]==3.4.0",
+    "python-multipart==0.0.9",
+    "httpx==0.28.1",
+    "aiosqlite==0.20.0",
+    "sqlalchemy==2.0.34",
+    "redis==5.1.0",
+    "python-dotenv==1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "pytest-asyncio==0.23.7",
+    "freezegun==1.5.1",
+]
+
+[tool.setuptools]
+packages = ["app", "app.api", "app.core", "app.models", "app.services"]
+package-dir = { "" = "backend" }
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+asyncio_mode = "auto"

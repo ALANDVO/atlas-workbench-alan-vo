@@ -1,0 +1,87 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: atlas-workbench-backend:1.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://atlas:atlas-secret@postgres:5432/atlas
+      - OIDC_ISSUER_URL=http://keycloak:8080/realms/atlas
+      - OIDC_CLIENT_ID=atlas-workbench
+      - OIDC_REDIRECT_URI=http://localhost:8000/auth/callback
+      - OIDC_LOGOUT_REDIRECT_URI=http://localhost:5173
+    env_file: .env
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    image: atlas-workbench-frontend:1.0.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:80"
+    environment:
+      - VITE_API_BASE=
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: atlas
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas-secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.1
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin-change-me
+      KC_DB: postgres
+      KC_DB_URL: host=postgres:5432;database=keycloak
+      KC_DB_USERNAME: atlas
+      KC_DB_PASSWORD: atlas-secret
+    volumes:
+      - ./docs/realm-atlas.json:/opt/keycloak/data/import/realm-atlas.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/realms/master"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  postgres_data:
