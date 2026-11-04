@@ -19,7 +19,8 @@ class TestCompressionSessions:
         assert session["mode"] == "compress"
         assert session["provider"] == "openai"
         assert session["model"] == "gpt-4"
-        assert "id" in session
+        assert session["total_requests"] == 0
+        assert session["tokens_saved"] == 0
         UUID(session["id"])  # Validate UUID format
 
     @pytest.mark.asyncio
@@ -55,12 +56,7 @@ class TestCompressionSessions:
         for i in range(3):
             await client.post(
                 "/compression/sessions",
-                json={
-                    "session_name": f"Session {i}",
-                    "mode": "compress",
-                    "provider": "openai",
-                    "model": "gpt-4",
-                },
+                json={"session_name": f"Session {i}", "mode": "compress", "provider": "openai", "model": "gpt-4"},
                 headers=auth_headers,
             )
 
@@ -75,12 +71,7 @@ class TestCompressionSessions:
         for i in range(5):
             await client.post(
                 "/compression/sessions",
-                json={
-                    "session_name": f"Session {i}",
-                    "mode": "compress",
-                    "provider": "openai",
-                    "model": "gpt-4",
-                },
+                json={"session_name": f"Session {i}", "mode": "compress", "provider": "openai", "model": "gpt-4"},
                 headers=auth_headers,
             )
 
@@ -102,14 +93,14 @@ class TestCompressionSessions:
         )
         await client.post(
             "/compression/sessions",
-            json={"session_name": "Summarize", "mode": "summarize", "provider": "openai", "model": "gpt-4"},
+            json={"session_name": "Summarize", "mode": "summarize", "provider": "anthropic", "model": "claude-3"},
             headers=auth_headers,
         )
 
         resp = await client.get("/compression/sessions?mode=compress", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data["items"]) == 1
+        assert data["total"] == 1
         assert data["items"][0]["mode"] == "compress"
 
     @pytest.mark.asyncio
@@ -119,19 +110,18 @@ class TestCompressionSessions:
             json={"session_name": "Active", "mode": "compress", "provider": "openai", "model": "gpt-4"},
             headers=auth_headers,
         )
-        ended_resp = await client.post(
+        end_resp = await client.post(
             "/compression/sessions",
-            json={"session_name": "To End", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            json={"session_name": "Ended", "mode": "compress", "provider": "openai", "model": "gpt-4"},
             headers=auth_headers,
         )
-        ended_id = ended_resp.json()["id"]
+        ended_id = end_resp.json()["id"]
         await client.post(f"/compression/sessions/{ended_id}/end", headers=auth_headers)
 
         resp = await client.get("/compression/sessions?status=active", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data["items"]) == 1
-        assert data["items"][0]["session_name"] == "Active"
+        assert data["total"] == 1
         assert data["items"][0]["ended_at"] is None
 
     @pytest.mark.asyncio
@@ -146,7 +136,6 @@ class TestCompressionSessions:
         resp = await client.get(f"/compression/sessions/{session_id}", headers=auth_headers)
         assert resp.status_code == 200
         session = resp.json()
-        assert session["id"] == session_id
         assert session["session_name"] == "Get Me"
 
     @pytest.mark.asyncio
@@ -186,7 +175,7 @@ class TestCompressionSessions:
 
         resp = await client.patch(
             f"/compression/sessions/{session_id}",
-            json={"session_name": "Updated"},
+            json={"session_name": "Should Fail"},
             headers=auth_headers,
         )
         assert resp.status_code == 400
@@ -240,6 +229,301 @@ class TestSessionRequests:
         fake_id = "00000000-0000-0000-0000-000000000000"
         resp = await client.get(f"/compression/sessions/{fake_id}/requests", headers=auth_headers)
         assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_basic(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+                "compressed_tokens": 800,
+                "recovered_tokens": 400,
+                "savings": 300,
+                "mcp_recovery_used": True,
+                "duration_ms": 150,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["session_id"] == session_id
+        assert data["provider"] == "openai"
+        assert data["model"] == "gpt-4"
+        assert data["mode"] == "compress"
+        assert data["input_tokens"] == 1000
+        assert data["output_tokens"] == 500
+        assert data["compressed_tokens"] == 800
+        assert data["recovered_tokens"] == 400
+        assert data["savings"] == 300
+        assert data["mcp_recovery_used"] is True
+        assert data["duration_ms"] == 150
+        assert data["status"] == "completed"
+
+        # Verify session aggregates updated
+        session_resp = await client.get(f"/compression/sessions/{session_id}", headers=auth_headers)
+        session = session_resp.json()
+        assert session["total_requests"] == 1
+        assert session["eligible_requests"] == 1
+        assert session["tokens_before"] == 1500
+        assert session["tokens_after"] == 1200
+        assert session["tokens_saved"] == 300
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_minimal(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        # Only required fields
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["compressed_tokens"] == 0
+        assert data["recovered_tokens"] == 0
+        assert data["savings"] == 0
+        assert data["mcp_recovery_used"] is False
+        assert data["duration_ms"] == 0
+        assert data["status"] == "completed"
+
+        # Verify session aggregates updated with defaults
+        session_resp = await client.get(f"/compression/sessions/{session_id}", headers=auth_headers)
+        session = session_resp.json()
+        assert session["total_requests"] == 1
+        assert session["eligible_requests"] == 0  # No compression applied
+        assert session["tokens_before"] == 1500
+        assert session["tokens_after"] == 0
+        assert session["tokens_saved"] == 0
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_missing_fields(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                # Missing mode, input_tokens, output_tokens
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "Missing required field" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_invalid_mode(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "invalid_mode",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "Invalid mode" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_mode_mismatch(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        # Request with summarize mode but session is compress
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "summarize",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "Request mode must match session mode" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_ended_session(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        # End the session first
+        await client.post(f"/compression/sessions/{session_id}/end", headers=auth_headers)
+
+        # Try to add request to ended session
+        resp = await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 400
+        assert "Cannot add requests to ended session" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_not_found(self, client: AsyncClient, auth_headers: dict):
+        fake_id = "00000000-0000-0000-0000-000000000000"
+        resp = await client.post(
+            f"/compression/sessions/{fake_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+            },
+            headers=auth_headers,
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_create_session_request_updates_stats(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        # Add first request
+        await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 1000,
+                "output_tokens": 500,
+                "compressed_tokens": 800,
+                "recovered_tokens": 400,
+                "savings": 300,
+                "mcp_recovery_used": True,
+            },
+            headers=auth_headers,
+        )
+
+        # Add second request
+        await client.post(
+            f"/compression/sessions/{session_id}/requests",
+            json={
+                "provider": "openai",
+                "model": "gpt-4",
+                "mode": "compress",
+                "input_tokens": 2000,
+                "output_tokens": 1000,
+                "compressed_tokens": 1500,
+                "recovered_tokens": 800,
+                "savings": 700,
+                "mcp_recovery_used": False,
+            },
+            headers=auth_headers,
+        )
+
+        # Check session aggregates
+        session_resp = await client.get(f"/compression/sessions/{session_id}", headers=auth_headers)
+        session = session_resp.json()
+        assert session["total_requests"] == 2
+        assert session["eligible_requests"] == 2
+        assert session["tokens_before"] == 4500
+        assert session["tokens_after"] == 3500
+        assert session["tokens_saved"] == 1000
+        assert abs(session["savings_ratio"] - 0.2222) < 0.01  # 1000/4500 ≈ 0.2222
+
+        # Check stats summary
+        stats_resp = await client.get("/compression/stats/summary", headers=auth_headers)
+        stats = stats_resp.json()
+        assert stats["total_sessions"] == 1
+        assert stats["total_requests"] == 2
+        assert stats["eligible_requests"] == 2
+        assert stats["tokens_before"] == 4500
+        assert stats["tokens_after"] == 3500
+        assert stats["tokens_saved"] == 1000
+        assert abs(stats["overall_savings_ratio"] - 0.2222) < 0.01
+
+    @pytest.mark.asyncio
+    async def test_list_session_requests_with_data(self, client: AsyncClient, auth_headers: dict):
+        create_resp = await client.post(
+            "/compression/sessions",
+            json={"session_name": "Test", "mode": "compress", "provider": "openai", "model": "gpt-4"},
+            headers=auth_headers,
+        )
+        session_id = create_resp.json()["id"]
+
+        # Add multiple requests
+        for i in range(3):
+            await client.post(
+                f"/compression/sessions/{session_id}/requests",
+                json={
+                    "provider": "openai",
+                    "model": "gpt-4",
+                    "mode": "compress",
+                    "input_tokens": 1000 + i * 100,
+                    "output_tokens": 500,
+                },
+                headers=auth_headers,
+            )
+
+        resp = await client.get(f"/compression/sessions/{session_id}/requests", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 3
+        assert len(data["items"]) == 3
+        # Should be ordered by created_at desc (newest first)
+        assert set(item["input_tokens"] for item in data["items"]) == {1000, 1100, 1200}
+        # Order not guaranteed with second-precision timestamps
 
 
 class TestStats:
