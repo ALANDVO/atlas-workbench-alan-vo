@@ -254,7 +254,7 @@ async def list_session_requests(
         raise HTTPException(status_code=404, detail="Session not found")
 
     query = select(CompressionRequest).where(CompressionRequest.session_id == session_id)
-    query = query.order_by(desc(CompressionRequest.created_at))
+    query = query.order_by(desc(CompressionRequest.created_at), desc(CompressionRequest.id))
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
@@ -270,6 +270,88 @@ async def list_session_requests(
         "page_size": page_size,
         "total_pages": (total + page_size - 1) // page_size,
     }
+
+
+@router.post("/sessions/{session_id}/requests", status_code=status.HTTP_201_CREATED)
+async def create_session_request(
+    session_id: UUID,
+    data: dict,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Verify session ownership and active status
+    result = await db.execute(
+        select(CompressionSession)
+        .where(CompressionSession.id == session_id)
+        .where(CompressionSession.user_id == user.id)
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.ended_at is not None:
+        raise HTTPException(status_code=400, detail="Cannot add requests to ended session")
+
+    # Validate required fields
+    required_fields = ["provider", "model", "mode", "input_tokens", "output_tokens"]
+    for field in required_fields:
+        if field not in data:
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+
+    # Validate mode matches session
+    try:
+        request_mode = CompressionMode(data["mode"])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid mode")
+
+    if request_mode != session.mode:
+        raise HTTPException(status_code=400, detail="Request mode must match session mode")
+
+    # Create request record
+    request = CompressionRequest(
+        session_id=session_id,
+        provider=data["provider"],
+        model=data["model"],
+        mode=request_mode,
+        input_tokens=data["input_tokens"],
+        output_tokens=data["output_tokens"],
+        compressed_tokens=data.get("compressed_tokens", 0),
+        recovered_tokens=data.get("recovered_tokens", 0),
+        savings=data.get("savings", 0),
+        mcp_recovery_used=data.get("mcp_recovery_used", False),
+        duration_ms=data.get("duration_ms", 0),
+        status=data.get("status", "completed"),
+        error_message=data.get("error_message"),
+    )
+    db.add(request)
+
+    # Update session aggregates
+    session.total_requests += 1
+    tokens_before = data["input_tokens"] + data["output_tokens"]
+    compressed_tokens = data.get("compressed_tokens", 0)
+    recovered_tokens = data.get("recovered_tokens", 0)
+    tokens_after = compressed_tokens + recovered_tokens
+    session.tokens_before += tokens_before
+    session.tokens_after += tokens_after
+    # Only count savings if compression was actually applied
+    if compressed_tokens > 0 or data.get("mcp_recovery_used", False):
+        session.tokens_saved += data.get("savings", max(0, tokens_before - tokens_after))
+    else:
+        session.tokens_saved += 0
+
+    # Count as eligible if compression was applied (compressed_tokens > 0 or mcp_recovery_used)
+    if compressed_tokens > 0 or data.get("mcp_recovery_used", False):
+        session.eligible_requests += 1
+
+    # Recalculate savings ratio (basis points)
+    if session.tokens_before > 0:
+        session.savings_ratio = int((session.tokens_saved / session.tokens_before) * 10000)
+
+    await db.commit()
+    await db.refresh(request)
+    await db.refresh(session)
+
+    return request_to_dict(request)
+
 
 
 @router.get("/stats/summary")

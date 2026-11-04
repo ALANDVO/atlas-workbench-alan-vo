@@ -1,6 +1,18 @@
 # Changelog
 
+## 1.2.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.1.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+### Added
+- POST /compression/sessions/{session_id}/requests endpoint for submitting compression requests
+- Session aggregate updates on request submission (totals, eligibility, tokens, savings ratio)
+- Stats summary reflects request data across sessions
+- 9 new backend tests for request creation and validation (28 compression tests total)
 
 Partial code published for continued development. Known issues: STATUS.md.
 

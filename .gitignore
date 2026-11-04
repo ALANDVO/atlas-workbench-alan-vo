@@ -19,3 +19,14 @@ atlas.db
 test_atlas.db
 .omp/
 .antigravitycli/
+.turbo/
+.env.*.local
+**/data/media/
+venv/
+node_modules/
+dist/
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
