@@ -1,6 +1,7 @@
+
 {
   "schema_version": 1,
-  "current_feature": "continue-implementation",
+  "current_feature": "compression-engine",
   "features": [
     {
       "id": "continue-implementation",
@@ -14,6 +15,25 @@
       ],
       "tests": [
         "backend/tests/test_compression.py"
+      ]
+    },
+    {
+      "id": "compression-engine",
+      "title": "Deterministic compression engine",
+      "status": "done",
+      "acceptance": [
+        "Compress mode: deterministic abbreviation of verbose phrases, filler removal",
+        "Summarize mode: first sentence + key identifiers extraction",
+        "Off mode: pass-through with no compression",
+        "MCP recovery references generated for compressed content",
+        "Token estimation for original and compressed text",
+        "All compression engine tests pass (26 tests)"
+      ],
+      "implementation": [
+        "backend/app/core/compression.py"
+      ],
+      "tests": [
+        "backend/tests/test_compression_engine.py"
       ]
     }
   ]
