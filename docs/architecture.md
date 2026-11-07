@@ -116,3 +116,7 @@ template. To configure:
 The backend validates OIDC ID token signature, issuer, audience, and nonce.
 SAML is handled entirely by Keycloak — the application treats Keycloak as the
 IdP.
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

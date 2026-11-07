@@ -177,3 +177,7 @@ The application validates OIDC ID tokens only; SAML is handled by Keycloak.
 ---
 
 Alan Vo | AI & Machine Learning | alanvo@gmail.com
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

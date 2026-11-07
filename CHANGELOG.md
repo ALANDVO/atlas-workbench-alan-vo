@@ -55,3 +55,7 @@ Partial code published for continued development. Known issues: STATUS.md.
 - Keycloak realm import with operator/analyst/admin roles and SAML IdP template
 - Frontend tests with Vitest + Testing Library (App, API client)
 - Backend tests with pytest + httpx (health, auth, compression — 24 tests)
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

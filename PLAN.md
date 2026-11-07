@@ -35,3 +35,6 @@ Implementation: `backend/app/core/compression.py`
 
 Tests: `backend/tests/test_compression_engine.py`
 
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)
