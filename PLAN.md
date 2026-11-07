@@ -37,4 +37,4 @@ Tests: `backend/tests/test_compression_engine.py`
 
 ---
 
-Alan Vo · [alanvo.net](https://alanvo.net)
+Alan Vo · [alanvo.net](https://alanvo.net) · [X: @alanvoasi](https://x.com/alanvoasi)
