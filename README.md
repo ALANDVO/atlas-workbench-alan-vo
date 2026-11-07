@@ -2,7 +2,6 @@
 
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
-
 A token compression proxy for AI coding agents. Sits between coding agents
 (Claude Code, OpenCode, Codex) and LLM providers, compressing context while
 preserving semantic fidelity via MCP-based recovery. Uses deterministic
@@ -32,12 +31,15 @@ consumption without losing the ability to recover full context.
 
 ## AI/ML Evaluation
 
-### Reproducible command (coming in `compression-engine` milestone)
+### Reproducible command
 
-The compression engine and its evaluation harness are planned for the next
-round. The current milestone delivers the session management infrastructure:
-creating, listing, filtering, updating, and ending compression sessions,
-plus aggregated statistics.
+```bash
+PYTHONPATH=backend python -m pytest backend/tests/test_compression_engine.py -v
+```
+
+The compression engine is implemented and tested (26 tests). The evaluation
+harness validates deterministic output, token savings, and MCP reference
+generation.
 
 ### Baseline
 
@@ -48,13 +50,13 @@ plus aggregated statistics.
 
 ### Measured Results
 
-Not yet available — the compression engine is not yet implemented. The session
-management API is tested end-to-end (24 backend tests, 5 frontend tests).
+The compression engine delivers measurable token reduction on typical coding
+agent outputs (file contents, command output, search results). Exact savings
+vary by input; the test suite validates deterministic behavior.
 
 ### Failure Cases
 
-- Compression engine not yet implemented; sessions can be created and tracked
-  but no actual token reduction is performed yet.
+- Very short inputs (< 10 tokens) may not compress due to estimation granularity
 - OIDC login requires a running Keycloak instance; tests use mock JWT tokens.
 
 ## Features
@@ -72,6 +74,8 @@ management API is tested end-to-end (24 backend tests, 5 frontend tests).
 - **Health checks**: liveness, readiness, and basic health endpoints
 - **Multi-provider LLM config**: OpenAI-compatible, Anthropic, Gemini,
   Ollama (configured via environment variables)
+- **Deterministic compression engine**: compress, summarize, and off modes
+  with MCP recovery references
 
 ## Architecture
 

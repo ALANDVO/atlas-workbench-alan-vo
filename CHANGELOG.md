@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- Deterministic compression engine (`backend/app/core/compression.py`)
+  - Compress mode: abbreviation of verbose phrases, filler word removal
+  - Summarize mode: first sentence + key identifiers extraction
+  - Off mode: pass-through with no compression
+  - MCP recovery references for compressed content
+  - Token estimation for original and compressed text
+- 26 new backend tests for compression engine (`backend/tests/test_compression_engine.py`)
+- Total backend tests: 69 (43 original + 26 new)
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.

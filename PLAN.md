@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-continue-implementation
+compression-engine
 
 ## Roadmap
 
@@ -18,4 +18,20 @@ Acceptance:
 Implementation: `backend/app/api/compression.py`
 
 Tests: `backend/tests/test_compression.py`
+
+### compression-engine — Deterministic compression engine
+
+Status: done
+
+Acceptance:
+- Compress mode: deterministic abbreviation of verbose phrases, filler removal
+- Summarize mode: first sentence + key identifiers extraction
+- Off mode: pass-through with no compression
+- MCP recovery references generated for compressed content
+- Token estimation for original and compressed text
+- All compression engine tests pass (26 tests)
+
+Implementation: `backend/app/core/compression.py`
+
+Tests: `backend/tests/test_compression_engine.py`
 
