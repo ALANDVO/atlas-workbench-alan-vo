@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.3.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
@@ -15,6 +19,17 @@ Partial code published for continued development. Known issues: STATUS.md.
   - Token estimation for original and compressed text
 - 26 new backend tests for compression engine (`backend/tests/test_compression_engine.py`)
 - Total backend tests: 69 (43 original + 26 new)
+
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- Direct compression endpoint: POST /compression/compress
+  - Compress text directly without a session
+  - Supports compress, summarize, and off modes
+  - Returns token counts, savings, MCP recovery reference, and compressed text
+- All existing tests pass (69 backend + 5 frontend)
 
 Partial code published for continued development. Known issues: STATUS.md.
 

@@ -4,9 +4,23 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-compression-engine
+direct-compression-endpoint
 
 ## Roadmap
+
+### direct-compression-endpoint — Direct text compression API endpoint
+
+Status: done
+
+Acceptance:
+- POST /compression/compress endpoint accepts text, mode, provider, model
+- Returns compression result with token counts and MCP reference
+- Works without requiring a session
+- All existing tests still pass (69 backend + 5 frontend)
+
+Implementation: `backend/app/api/compression.py`
+
+Tests: `backend/tests/test_compression.py`
 
 ### continue-implementation — Continue implementation and resolve known failures
 

@@ -1,8 +1,24 @@
-
 {
   "schema_version": 1,
-  "current_feature": "compression-engine",
+  "current_feature": "direct-compression-endpoint",
   "features": [
+    {
+      "id": "direct-compression-endpoint",
+      "title": "Direct text compression API endpoint",
+      "status": "done",
+      "acceptance": [
+        "POST /compression/compress endpoint accepts text, mode, provider, model",
+        "Returns compression result with token counts and MCP reference",
+        "Works without requiring a session",
+        "All existing tests still pass (69 backend + 5 frontend)"
+      ],
+      "implementation": [
+        "backend/app/api/compression.py"
+      ],
+      "tests": [
+        "backend/tests/test_compression.py"
+      ]
+    },
     {
       "id": "continue-implementation",
       "title": "Continue implementation and resolve known failures",

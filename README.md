@@ -146,6 +146,7 @@ Services:
 | POST | /compression/sessions/{id}/end | ✓ | End session |
 | GET | /compression/sessions/{id}/requests | ✓ | List requests |
 | GET | /compression/stats/summary | ✓ | Stats summary |
+| POST | /compression/compress | ✓ | Direct text compression |
 
 ## Provider Configuration
 
