@@ -391,3 +391,35 @@ async def get_stats_summary(
         "tokens_saved": tokens_saved,
         "overall_savings_ratio": overall_savings_ratio,
     }
+
+@router.post("/compress")
+async def compress_text_direct(
+    data: dict,
+    user: User = Depends(get_current_user),
+):
+    """
+    Compress text directly without a session.
+    
+    Body:
+    - text: Text to compress (required)
+    - mode: "compress" | "summarize" | "off" (default: "compress")
+    - provider: Provider name (optional)
+    - model: Model name (optional)
+    
+    Returns compression result with token counts and MCP reference.
+    """
+    text = data.get("text")
+    if not text:
+        raise HTTPException(status_code=400, detail="Missing required field: text")
+    
+    mode = data.get("mode", "compress")
+    if mode not in ("compress", "summarize", "off"):
+        raise HTTPException(status_code=400, detail="Invalid mode")
+    
+    provider = data.get("provider", "openai-compatible")
+    model = data.get("model", "gpt-4")
+    
+    from app.core.compression import compress_request_text
+    result = compress_request_text(text, mode, provider, model)
+    
+    return result
