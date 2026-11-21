@@ -234,5 +234,7 @@ def compress_request_text(
         "mcp_recovery_used": result.mcp_reference is not None,
         "mcp_reference": result.mcp_reference,
         "compressed_text": result.compressed_text,
+        "provider": provider,
+        "model": model,
     }
 

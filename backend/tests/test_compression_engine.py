@@ -169,6 +169,21 @@ class TestCompressRequestText:
         assert result["savings"] == 0
         assert result["mcp_reference"] is None
 
+    def test_compress_request_text_provider_model(self):
+        """Test that provider and model are included in compress_request_text result."""
+        text = "This is a test configuration"
+        result = compress_request_text(text, mode="compress", provider="anthropic", model="claude-3")
+        assert isinstance(result, dict)
+        assert "input_tokens" in result
+        assert "compressed_tokens" in result
+        assert "savings" in result
+        assert "mcp_reference" in result
+        assert "compressed_text" in result
+        assert "provider" in result
+        assert "model" in result
+        assert result["provider"] == "anthropic"
+        assert result["model"] == "claude-3"
+
 
 class TestInternalFunctions:
     def test_compress_function_direct(self):

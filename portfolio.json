@@ -18,5 +18,6 @@
     "ollama"
   ],
   "summary": "Work in progress: atlas-workbench-alan-vo",
-  "status": "work-in-progress"
+  "status": "work-in-progress",
+  "version": "1.6.0"
 }
