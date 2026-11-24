@@ -106,6 +106,15 @@ class TestSummarizeMode:
         assert "42" in result.compressed_text
 
 
+
+    def test_summarize_mode_pascal_case(self):
+        """Test that PascalCase identifiers (e.g., UserService) are extracted."""
+        text = 'The UserService configuration failed and myVariable worked.'
+        result = compress_text(text, mode='summarize')
+        assert 'UserService' in result.compressed_text
+        assert 'myVariable' in result.compressed_text
+        assert 'Key:' in result.compressed_text
+
 class TestOffMode:
     def test_off_mode_no_compression(self):
         text = "This is a configuration file for the application"

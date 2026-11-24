@@ -176,7 +176,7 @@ def _summarize(text: str) -> str:
     first = sentences[0]
 
     # Extract key identifiers (camelCase, snake_case, UPPER_CASE, file paths, URLs)
-    identifiers = re.findall(r'\b[a-z]+(?:[A-Z][a-z]*)+\b|\b[A-Z_]+\b|\b[a-z_]+(?:_[a-z]+)+\b|\S*\.\w{2,4}\b', text)
+    identifiers = re.findall(r'\b[a-z]+(?:[A-Z][a-z]*)+\b|\b[A-Z_]+\b|\b[a-z_]+(?:_[a-z]+)+\b|\S*\.\w{2,4}\b|\b[A-Z][a-z]+(?:[A-Z][a-z]*)+\b', text)
     unique_identifiers = []
     seen = set()
     for ident in identifiers:
