@@ -1,8 +1,17 @@
 # Changelog
 
+## 1.7.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.6.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Added
+- PascalCase identifier support in summarize mode
+  - Enhanced identifier regex in `backend/app/core/compression.py:_summarize()` to extract PascalCase identifiers (e.g., `UserService`, `MyClass`)
+  - Added test `test_summarize_mode_pascal_case` in `backend/tests/test_compression_engine.py`
 
 ## 1.5.0 — work-in-progress checkpoint
 
